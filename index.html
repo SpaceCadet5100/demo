@@ -1,0 +1,16 @@
+<html>
+    <body>
+        <canvas id="surface" height="400px" width="400px">
+        </canvas>
+        <script type="module">
+                import initDemo from './cube2.js';
+                import "./gl-matrix-min.js";
+                const { mat2, mat2d, mat4, mat3, quat, quat2, vec2, vec3, vec4 } = glMatrix;
+
+                window.onload = () => {
+                    let canvas = document.getElementById("surface");
+                    initDemo(canvas, glMatrix);
+                }
+        </script>
+    </body>
+</html>
