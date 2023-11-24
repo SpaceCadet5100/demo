@@ -1,6 +1,6 @@
 
 
-var  vertexShaderText = 
+let  vertexShaderText = 
 [
 'precision mediump float;',
 '',
@@ -17,7 +17,7 @@ var  vertexShaderText =
 '}',
 ].join('\n');
 
-var fragmentShaderText = 
+let fragmentShaderText = 
 [
 'precision mediump float;',
 '',
@@ -28,21 +28,28 @@ var fragmentShaderText =
 '}',
 ].join('\n');
 
-var initDemo = function (canvas, glMatrix) {
-    var gl = canvas.getContext('webgl');
+let animateBool = false;
+
+export function doThings() {
+    animateBool = true;
+}
+
+export function initDemo(canvas, glMatrix) {
+    let gl = canvas.getContext('webgl');
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
     gl.cullFace(gl.BACK);
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    gl.viewport(0, 0, window.innerWidth, window.innerHeight);
-    gl.viewport(0, 0, window.innerWidth, window.innerHeight);
+    canvas.width = window.innerWidth /2;
+    canvas.height = window.innerHeight /2;
+    gl.viewport(0, 0, window.innerWidth /2, window.innerHeight /2);
+    gl.viewport(0, 0, window.innerWidth /2, window.innerHeight /2);
     gl.clearColor(1.0, 1.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    var vertexShader = gl.createShader(gl.VERTEX_SHADER)
-    var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)
+    
+    let program = gl.createProgram();
+    let vertexShader = gl.createShader(gl.VERTEX_SHADER)
+    let fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)
 
     gl.shaderSource(vertexShader, vertexShaderText);
     gl.shaderSource(fragmentShader, fragmentShaderText);
@@ -50,19 +57,15 @@ var initDemo = function (canvas, glMatrix) {
     gl.compileShader(vertexShader);
     gl.compileShader(fragmentShader);
 
-    //check for compile errors
-
-    var program = gl.createProgram();
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
+
     //check program linking errors
     //validate program only do in debugging 
     //gl.validateProgram(program);
 
-    //cleate a buffer    
-
-    var boxVertices = 
+    let boxVertices = 
 	[ // X, Y, Z           R, G, B
 		// Top
 		-1.0, 1.0, -1.0,   0.5, 0.5, 0.5,
@@ -101,7 +104,7 @@ var initDemo = function (canvas, glMatrix) {
 		1.0, -1.0, -1.0,    0.5, 0.5, 1.0,
 	];
 
-	var boxIndices =
+	let boxIndices =
 	[
 		// Top
 		0, 1, 2,
@@ -128,22 +131,21 @@ var initDemo = function (canvas, glMatrix) {
 		22, 20, 23
 	];
 
-    
+    let positionAttribLocation = gl.getAttribLocation(program, 'vertPosition');
+    let colorAttribLocation = gl.getAttribLocation(program, 'vertColor');
+    let mathWorldUniformLocation = gl.getUniformLocation(program, 'mWorld');
+    let viewUniformLocation = gl.getUniformLocation(program, 'mView');
+    let projUniformLocation = gl.getUniformLocation(program, 'mProj');
 
-    var cubeVertexBufferObject = gl.createBuffer();
+    let cubeVertexBufferObject = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexBufferObject);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(boxVertices), gl.STATIC_DRAW);
 
 
-    var cubeIndexBufferObject = gl.createBuffer();
+    let cubeIndexBufferObject = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeIndexBufferObject);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(boxIndices), gl.STATIC_DRAW);
 
-
-
-
-    var positionAttribLocation = gl.getAttribLocation(program, 'vertPosition');
-    var colorAttribLocation = gl.getAttribLocation(program, 'vertColor');
 
     gl.vertexAttribPointer(
         positionAttribLocation,
@@ -165,15 +167,10 @@ var initDemo = function (canvas, glMatrix) {
     gl.enableVertexAttribArray(positionAttribLocation);
     gl.enableVertexAttribArray(colorAttribLocation);
 
-    gl.useProgram(program);
 
-    var mathWorldUniformLocation = gl.getUniformLocation(program, 'mWorld');
-    var viewUniformLocation = gl.getUniformLocation(program, 'mView');
-    var projUniformLocation = gl.getUniformLocation(program, 'mProj');
-
-    var worldMatrix = new Float32Array(16);
-    var viewMatrix = new Float32Array(16);
-    var projMatrix = new Float32Array(16);
+    let worldMatrix = new Float32Array(16);
+    let viewMatrix = new Float32Array(16);
+    let projMatrix = new Float32Array(16);
 
     glMatrix.mat4.identity(worldMatrix);
     //glMatrix.mat4.identity(viewMatrix);
@@ -181,32 +178,33 @@ var initDemo = function (canvas, glMatrix) {
     glMatrix.mat4.lookAt(viewMatrix, [0, 0, -5],[0, 0, 0], [0, 1, 0]);
     glMatrix.mat4.perspective(projMatrix, glMatrix.glMatrix.toRadian(45), canvas.width / canvas.height, 0.1, 1000.0);;
 
+    gl.useProgram(program);
     gl.uniformMatrix4fv(mathWorldUniformLocation, gl.FALSE, worldMatrix);
     gl.uniformMatrix4fv(viewUniformLocation, gl.FALSE, viewMatrix);
     gl.uniformMatrix4fv(projUniformLocation, gl.FALSE, projMatrix);
 
-    var xRotMat = new Float32Array(16);
-    var yRotMat = new Float32Array(16);
+    let xRotMat = new Float32Array(16);
+    let yRotMat = new Float32Array(16);
 
-    var angle = 0;
-    var identityMatrix = new Float32Array(16);
+    let angle = 0;
+    let identityMatrix = new Float32Array(16);
     glMatrix.mat4.identity(identityMatrix);
-    var mainLoop = function () {
-        angle = performance.now()/ 1000/ 6 * 2 * Math.PI;
-        glMatrix.mat4.rotate(xRotMat, identityMatrix, angle, [1, 0, 0]);
-        glMatrix.mat4.rotate(yRotMat, identityMatrix, angle / 4, [0, 1, 0]);
-        glMatrix.mat4.mul(worldMatrix, yRotMat, xRotMat);
-        gl.uniformMatrix4fv(mathWorldUniformLocation, gl.FLASE, worldMatrix);
-
+    function mainLoop() {
+        gl.useProgram(program); 
+        if (animateBool) {
+            angle = performance.now() / 1000 / 6 * 2 * Math.PI;
+            glMatrix.mat4.rotate(xRotMat, identityMatrix, angle, [0, 0, 1]);
+            glMatrix.mat4.rotate(yRotMat, identityMatrix, angle, [1, 0, 0]);
+            glMatrix.mat4.mul(worldMatrix, yRotMat, xRotMat);
+            gl.uniformMatrix4fv(mathWorldUniformLocation, gl.FALSE, worldMatrix);
+        }
+    
         gl.clearColor(1.0, 1.0, 0.0, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-        //gl.drawArrays(gl.TRIANGLES, 0, 3);
+    
         gl.drawElements(gl.TRIANGLES, boxIndices.length, gl.UNSIGNED_SHORT, 0);
-        //wont call the function if the tab loses focus
         requestAnimationFrame(mainLoop);
     };
     requestAnimationFrame(mainLoop);
 };
 
-export default initDemo;
